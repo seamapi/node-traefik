@@ -1,0 +1,26 @@
+{
+  "name": "traefik",
+  "version": "0.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "install": "node install.js",
+    "test": "ava tests/**/*.test.js"
+  },
+  "dependencies": {
+    "bent": "^7.3.10",
+    "flat": "^5.0.2",
+    "follow-redirects": "^1.14.1",
+    "json2toml": "^2.2.0",
+    "tar": "^6.1.0",
+    "temp-write": "^5.0.0",
+    "tmp": "^0.2.1"
+  },
+  "devDependencies": {
+    "ava": "^3.12.1",
+    "get-port": "^5.1.1",
+    "micro": "^9.3.4",
+    "prettier": "^2.3.2",
+    "test-listen": "^1.1.0"
+  }
+}

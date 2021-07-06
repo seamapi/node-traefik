@@ -1,0 +1,96 @@
+const child_process = require("child_process")
+const json2toml = require("json2toml")
+const flat = require("flat")
+
+const downloadtraefik = require("./download-traefik")
+
+module.exports.start = async (params) => {
+  if (!params)
+    throw new Error(
+      "No parameters provided to traefik.start (static config or path to static config must be specified)"
+    )
+  const tempWrite = (await import("temp-write")).default
+  const traefikPath = await downloadtraefik()
+  let pathToStaticConfigFile = typeof params === "string" ? params : null
+  let staticConfigObject
+
+  if (params.staticConfig) {
+    staticConfigObject = params.staticConfig
+  } else if (typeof params === "object") {
+    if (params.dynamicConfig)
+      throw new Error(
+        "When specifying dynamicConfig parameter, make sure to specify staticConfig parameter"
+      )
+
+    staticConfigObject = params
+  }
+
+  if (params.dynamicConfig && staticConfigObject) {
+    staticConfigObject["providers.file.filename"] = await tempWrite(
+      json2toml(flat.unflatten(params.dynamicConfig)),
+      "traefik-dynamic.toml"
+    )
+    console.log("traefik-dynamic.toml path:", staticConfigObject["providers.file.filename"])
+  }
+
+  if (staticConfigObject) {
+    pathToStaticConfigFile = await tempWrite(
+      json2toml(flat.unflatten(staticConfigObject)),
+      "traefik-static.toml"
+    )
+  }
+
+  const argList = ["--configFile", pathToStaticConfigFile]
+
+  console.log(`Running ${traefikPath} ${argList.join(' ')}`)
+  const proc = child_process.spawn(traefikPath, argList, {
+    shell: true,
+  })
+  proc.stdout.on("data", (data) => {
+    console.log(`${params.logPrefix || "traefik"} stdout: ${data}`)
+  })
+  proc.stderr.on("data", (data) => {
+    console.log(`${params.logPrefix || "traefik"} stderr: ${data}`)
+  })
+
+  let isClosed = false
+  proc.on("close", (code) => {
+    console.log(`${params.logPrefix || "traefik"} closing`)
+    isClosed = true
+  })
+
+  await new Promise((resolve, reject) => {
+    const processCloseTimeout = setTimeout(() => {
+      if (isClosed) {
+        reject("traefik didn't start properly")
+      } else {
+        reject(`traefik didn't respond`)
+        proc.kill("SIGINT")
+      }
+    }, 5000)
+
+    async function checkIfRunning() {
+      setTimeout(() => {
+        // TODO ping traefik
+        const traefikIsHealthy = !isClosed
+        if (traefikIsHealthy) {
+          clearTimeout(processCloseTimeout)
+          resolve()
+        }
+      }, 2000)
+    }
+    checkIfRunning()
+  })
+
+  process.on("SIGINT", () => proc.kill("SIGINT"))
+  process.on("SIGUSR1", () => proc.kill("SIGINT"))
+  process.on("SIGUSR2", () => proc.kill("SIGINT"))
+  process.on("exit", () => proc.kill("SIGINT"))
+
+  return {
+    proc,
+    stop: async () => {
+      proc.kill("SIGINT")
+    },
+  }
+}
