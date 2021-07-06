@@ -1,13 +1,13 @@
 const test = require("ava")
 const bent = require("bent")
-const traefik = require("../")
+const traefik = require("..")
 const getPort = require("get-port")
 const micro = require("micro")
 const request = bent("string")
 
-test("requests should be proxied through traefik", async (t) => {
+test("invalid config should throw with relevant error", async (t) => {
   const [webServicePort, traefikPort] = [await getPort(),await getPort()]
-  
+
   // Web service to proxy (on client)
   const webService = micro((req, res) => "Hello world!")
   webService.listen(webServicePort)
@@ -17,7 +17,7 @@ test("requests should be proxied through traefik", async (t) => {
       defaultEntryPoints: ["http"],
       entryPoints:{
         http: {
-          address: ":3001"
+          address: `pasta:pasta.com` // ERROR
         }
       },
       // dot notation is also OK!
@@ -40,7 +40,7 @@ test("requests should be proxied through traefik", async (t) => {
     }
   })
 
-  const response = await request(`http://localhost:${webServicePort}`)
+  const response = await request(`http://localhost:${traefikPort}`)
   t.assert(response === "Hello world!")
 
   await traefikService.stop()

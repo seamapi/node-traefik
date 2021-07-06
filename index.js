@@ -49,7 +49,10 @@ module.exports.start = async (params) => {
   proc.stdout.on("data", (data) => {
     console.log(`${params.logPrefix || "traefik"} stdout: ${data}`)
   })
+  let recentStderrLines = []
   proc.stderr.on("data", (data) => {
+    recentStderrLines.push(data)
+    recentStderrLines = recentStderrLines.slice(-10)
     console.log(`${params.logPrefix || "traefik"} stderr: ${data}`)
   })
 
@@ -62,7 +65,7 @@ module.exports.start = async (params) => {
   await new Promise((resolve, reject) => {
     const processCloseTimeout = setTimeout(() => {
       if (isClosed) {
-        reject("traefik didn't start properly")
+        reject(`traefik didn't start properly:\n\n${recentStderrLines.join('\n')}`)
       } else {
         reject(`traefik didn't respond`)
         proc.kill("SIGINT")
