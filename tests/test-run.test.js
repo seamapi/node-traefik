@@ -6,9 +6,11 @@ const micro = require("micro")
 const request = bent("string")
 
 test("requests should be proxied through traefik", async (t) => {
+  const [webServicePort, traefikPort] = [await getPort(),await getPort()]
+  
   // Web service to proxy (on client)
   const webService = micro((req, res) => "Hello world!")
-  webService.listen(3000)
+  webService.listen(webServicePort)
 
   const traefikService = await traefik.start({
     staticConfig: {
@@ -31,14 +33,14 @@ test("requests should be proxied through traefik", async (t) => {
         },
         services: {
           someService: {
-            "loadBalancer.servers": [{ url: "http://localhost:3000" }]
+            "loadBalancer.servers": [{ url: `http://localhost:${webServicePort}` }]
           }
         }
       }
     }
   })
 
-  const response = await request(`http://localhost:3001`)
+  const response = await request(`http://localhost:${webServicePort}`)
   t.assert(response === "Hello world!")
 
   await traefikService.stop()
