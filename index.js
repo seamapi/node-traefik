@@ -66,7 +66,8 @@ module.exports.start = async (params) => {
 
   let isClosed = false
   proc.on("close", (code) => {
-    console.log("traefik closing")
+    traefikService.emit("close", code)
+    console.log(`traefik closing (code: ${code})`)
     isClosed = true
   })
 
