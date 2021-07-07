@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "install": "node install.js",
-    "test": "ava tests/**/*.test.js"
+    "test": "ava tests/**/*.test.js",
+    "clean": "rimraf traefik_* && rm -f traefik"
   },
   "dependencies": {
     "bent": "^7.3.10",
@@ -21,6 +22,7 @@
     "get-port": "^5.1.1",
     "micro": "^9.3.4",
     "prettier": "^2.3.2",
+    "rimraf": "^3.0.2",
     "test-listen": "^1.1.0"
   }
 }

@@ -51,7 +51,6 @@ module.exports = async () => {
   const extractExePath = path.resolve(__dirname, "traefik") // TODO .exe
   if (fs.existsSync(extractExePath)) return extractExePath
 
-
   // Get all the assets from the github release page
   const releaseAPIUrl = `https://api.github.com/repos/traefik/traefik/releases/tags/v${releaseVersionToUse}`
   const { assets } = await getJSON(releaseAPIUrl)
@@ -71,22 +70,20 @@ module.exports = async () => {
   // e.g. download something like traefik-ubuntu.tar.xz
   const downloadPath = path.resolve(__dirname, myAsset.name)
 
-    console.log(`Downloading ${myAsset.name}...`)
+  console.log(`Downloading ${myAsset.name}...`)
 
-    if (!fs.existsSync(path.join(__dirname, myAsset.name))) {
-      await downloadFile(myAsset.browser_download_url, downloadPath)
-    }
+  if (!fs.existsSync(path.join(__dirname, myAsset.name))) {
+    await downloadFile(myAsset.browser_download_url, downloadPath)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
 
-    await new Promise(resolve => setTimeout(resolve, 100))
+  // Extract File
+  await tar.x({
+    file: downloadPath,
+  })
+  fs.unlinkSync(downloadPath)
 
-    // Extract File
-    await tar.x({
-      file: downloadPath
-    })
-    fs.unlinkSync(downloadPath)
-
-    fs.chmodSync(extractExePath, 0o755)
-  
+  fs.chmodSync(extractExePath, 0o755)
 
   return path.resolve(__dirname, extractExePath)
 }
