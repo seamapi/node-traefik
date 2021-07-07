@@ -48,6 +48,10 @@ switch (platform) {
 const releaseVersionToUse = "2.4.9"
 
 module.exports = async () => {
+  const extractExePath = path.resolve(__dirname, "traefik") // TODO .exe
+  if (fs.existsSync(extractExePath)) return extractExePath
+
+
   // Get all the assets from the github release page
   const releaseAPIUrl = `https://api.github.com/repos/traefik/traefik/releases/tags/v${releaseVersionToUse}`
   const { assets } = await getJSON(releaseAPIUrl)
@@ -65,11 +69,8 @@ module.exports = async () => {
 
   // Download the asset (which is a compressed version of the executable)
   // e.g. download something like traefik-ubuntu.tar.xz
-
   const downloadPath = path.resolve(__dirname, myAsset.name)
-  const extractExePath = path.resolve(__dirname, "traefik") // TODO .exe
 
-  if (!fs.existsSync(extractExePath)) {
     console.log(`Downloading ${myAsset.name}...`)
 
     if (!fs.existsSync(path.join(__dirname, myAsset.name))) {
@@ -85,7 +86,7 @@ module.exports = async () => {
     fs.unlinkSync(downloadPath)
 
     fs.chmodSync(extractExePath, 0o755)
-  }
+  
 
   return path.resolve(__dirname, extractExePath)
 }
