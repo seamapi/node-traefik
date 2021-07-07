@@ -1,8 +1,14 @@
 const child_process = require("child_process")
 const json2toml = require("json2toml")
 const flat = require("flat")
+const { EventEmitter } = require('events')
 
 const downloadtraefik = require("./download-traefik")
+
+class TraefikService extends EventEmitter {
+  proc = null
+  stop = null
+}
 
 module.exports.start = async (params) => {
   if (!params)
@@ -11,6 +17,7 @@ module.exports.start = async (params) => {
     )
   const tempWrite = (await import("temp-write")).default
   const traefikPath = await downloadtraefik()
+  const traefikService = new TraefikService()
   let pathToStaticConfigFile = typeof params === "string" ? params : null
   let staticConfigObject
 
@@ -47,18 +54,19 @@ module.exports.start = async (params) => {
     shell: true,
   })
   proc.stdout.on("data", (data) => {
-    console.log(`${params.logPrefix || "traefik"} stdout: ${data}`)
+    traefikService.emit("data", data)
   })
   let recentStderrLines = []
   proc.stderr.on("data", (data) => {
+    traefikService.emit("data", data)
     recentStderrLines.push(data)
     recentStderrLines = recentStderrLines.slice(-10)
-    console.log(`${params.logPrefix || "traefik"} stderr: ${data}`)
+    console.log(`traefik stderr: ${data}`)
   })
 
   let isClosed = false
   proc.on("close", (code) => {
-    console.log(`${params.logPrefix || "traefik"} closing`)
+    console.log("traefik closing")
     isClosed = true
   })
 
@@ -90,10 +98,10 @@ module.exports.start = async (params) => {
   process.on("SIGUSR2", () => proc.kill("SIGINT"))
   process.on("exit", () => proc.kill("SIGINT"))
 
-  return {
-    proc,
-    stop: async () => {
-      proc.kill("SIGINT")
-    },
+  traefikService.proc = proc
+  traefikService.stop = async () => {
+    proc.kill("SIGINT")
   }
+
+  return traefikService
 }
