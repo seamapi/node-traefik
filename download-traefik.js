@@ -76,9 +76,11 @@ module.exports = async () => {
       await downloadFile(myAsset.browser_download_url, downloadPath)
     }
 
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     // Extract File
     await tar.x({
-      file: downloadPath,
+      file: downloadPath
     })
     fs.unlinkSync(downloadPath)
 
