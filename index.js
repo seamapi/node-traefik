@@ -1,13 +1,14 @@
 const child_process = require("child_process")
 const json2toml = require("json2toml")
 const flat = require("flat")
-const { EventEmitter } = require('events')
+const { EventEmitter } = require("events")
+const tempy = require("tempy")
 
 const downloadtraefik = require("./download-traefik")
 
 class TraefikService extends EventEmitter {
-  proc = null
-  stop = null
+  // proc = null
+  // stop = null
 }
 
 module.exports.start = async (params) => {
@@ -15,7 +16,6 @@ module.exports.start = async (params) => {
     throw new Error(
       "No parameters provided to traefik.start (static config or path to static config must be specified)"
     )
-  const tempWrite = (await import("temp-write")).default
   const traefikPath = await downloadtraefik()
   const traefikService = new TraefikService()
   let pathToStaticConfigFile = typeof params === "string" ? params : null
@@ -33,11 +33,15 @@ module.exports.start = async (params) => {
   }
 
   if (params.dynamicConfig && staticConfigObject) {
-    staticConfigObject["providers.file.filename"] = await tempWrite(
+    staticConfigObject["providers.file.filename"] = tempy.writeSync(
       json2toml(flat.unflatten(params.dynamicConfig)),
       "traefik-dynamic.toml"
     )
-    console.log("traefik-dynamic.toml path:", staticConfigObject["providers.file.filename"])
+    if (params.log)
+      console.log(
+        "traefik-dynamic.toml path:",
+        staticConfigObject["providers.file.filename"]
+      )
   }
 
   if (staticConfigObject) {
@@ -49,7 +53,7 @@ module.exports.start = async (params) => {
 
   const argList = ["--configFile", pathToStaticConfigFile]
 
-  console.log(`Running ${traefikPath} ${argList.join(' ')}`)
+  if (params.log) console.log(`Running ${traefikPath} ${argList.join(" ")}`)
   const proc = child_process.spawn(traefikPath, argList, {
     shell: true,
   })
@@ -61,20 +65,22 @@ module.exports.start = async (params) => {
     traefikService.emit("data", data)
     recentStderrLines.push(data)
     recentStderrLines = recentStderrLines.slice(-10)
-    console.log(`traefik stderr: ${data}`)
+    if (params.log) console.log(`traefik stderr: ${data}`)
   })
 
   let isClosed = false
   proc.on("close", (code) => {
     traefikService.emit("close", code)
-    console.log(`traefik closing (code: ${code})`)
+    if (params.log) console.log(`traefik closing (code: ${code})`)
     isClosed = true
   })
 
   await new Promise((resolve, reject) => {
     const processCloseTimeout = setTimeout(() => {
       if (isClosed) {
-        reject(`traefik didn't start properly:\n\n${recentStderrLines.join('\n')}`)
+        reject(
+          `traefik didn't start properly:\n\n${recentStderrLines.join("\n")}`
+        )
       } else {
         reject(`traefik didn't respond`)
         proc.kill("SIGINT")

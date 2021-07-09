@@ -14,7 +14,7 @@
     "follow-redirects": "^1.14.1",
     "json2toml": "^2.2.0",
     "tar": "^6.1.0",
-    "temp-write": "^5.0.0",
+    "tempy": "^1.0.1",
     "tmp": "^0.2.1"
   },
   "devDependencies": {
