@@ -35,7 +35,7 @@ module.exports.start = async (params) => {
   if (params.dynamicConfig && staticConfigObject) {
     staticConfigObject["providers.file.filename"] = tempy.writeSync(
       json2toml(flat.unflatten(params.dynamicConfig)),
-      "traefik-dynamic.toml"
+      { name: "traefik-dynamic.toml" }
     )
     if (params.log)
       console.log(
@@ -45,9 +45,9 @@ module.exports.start = async (params) => {
   }
 
   if (staticConfigObject) {
-    pathToStaticConfigFile = await tempWrite(
+    pathToStaticConfigFile = tempy.writeSync(
       json2toml(flat.unflatten(staticConfigObject)),
-      "traefik-static.toml"
+      { name: "traefik-static.toml" }
     )
   }
 
