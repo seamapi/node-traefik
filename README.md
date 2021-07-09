@@ -27,6 +27,7 @@ service = await traefik.start({
 
 // Long Form
 service = await traefik.start({
+  log: true,
   staticConfig: {
     defaultEntryPoints: ["http"],
     entryPoints:{
