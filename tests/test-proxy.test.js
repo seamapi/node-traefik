@@ -34,7 +34,7 @@ test("requests should be proxied through traefik", async (t) => {
         services: {
           someService: {
             "loadBalancer.servers": [
-              { url: `http://localhost:${webServicePort}` },
+              { url: `http://127.0.0.1:${webServicePort}` },
             ],
           },
         },
@@ -42,10 +42,7 @@ test("requests should be proxied through traefik", async (t) => {
     },
   })
 
-  console.log("waiting a second...")
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  const response = await request(`http://localhost:${traefikPort}`)
+  const response = await request(`http://127.0.0.1:${traefikPort}`)
   t.assert(response === "Hello world!")
 
   await traefikService.stop()
