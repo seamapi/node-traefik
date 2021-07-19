@@ -21,7 +21,7 @@ switch (platform) {
     osRelease = `win64.exe`
     break
   case "darwin":
-    osRelease = "mac"
+    osRelease = "darwin_amd64"
     break
   case "freebsd":
     osRelease = "freebsd"
