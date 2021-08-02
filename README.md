@@ -17,12 +17,12 @@ let service = await traefik.start("/path/to/traefik.yml")
 // Static Config Only
 service = await traefik.start({
   defaultEntryPoints: ["http"],
-  entryPoints:{
+  entryPoints: {
     http: {
-      address: ":3001"
-    }
+      address: ":3001",
+    },
   },
-  "log.level": "DEBUG"
+  "log.level": "DEBUG",
 })
 
 // Long Form
@@ -30,29 +30,29 @@ service = await traefik.start({
   log: true,
   staticConfig: {
     defaultEntryPoints: ["http"],
-    entryPoints:{
+    entryPoints: {
       http: {
-        address: ":3001"
-      }
+        address: ":3001",
+      },
     },
     // dot notation is also OK!
-    "log.level": "DEBUG"
+    "log.level": "DEBUG",
   },
   dynamicConfig: {
     http: {
       routers: {
         someRouter: {
           service: "someService",
-          rule: "PathPrefix(`/`)"
-        }
+          rule: "PathPrefix(`/`)",
+        },
       },
       services: {
         someService: {
-          "loadBalancer.servers": [{ url: "http://localhost:3000" }]
-        }
-      }
-    }
-  }
+          "loadBalancer.servers": [{ url: "http://localhost:3000" }],
+        },
+      },
+    },
+  },
 })
 
 await service.stop()
