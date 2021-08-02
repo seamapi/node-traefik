@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bent": "^7.3.10",
+    "bunyan": "^1.8.15",
     "flat": "^5.0.2",
     "follow-redirects": "^1.14.1",
     "json2toml": "^2.2.0",

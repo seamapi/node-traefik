@@ -3,6 +3,13 @@ const json2toml = require("json2toml")
 const flat = require("flat")
 const { EventEmitter } = require("events")
 const tempy = require("tempy")
+const debug = require("debug")("traefik")
+const bunyan = require("bunyan")
+
+const log = bunyan.createLogger({
+  name: "traefik",
+  level: debug.enabled ? "trace" : "info",
+})
 
 const downloadtraefik = require("./download-traefik")
 
@@ -37,11 +44,9 @@ module.exports.start = async (params) => {
       json2toml(flat.unflatten(params.dynamicConfig)),
       { name: "traefik-dynamic.toml" }
     )
-    if (params.log)
-      console.log(
-        "traefik-dynamic.toml path:",
-        staticConfigObject["providers.file.filename"]
-      )
+    log.trace({
+      traefikDynamicTomlPath: staticConfigObject["providers.file.filename"],
+    })
   }
 
   if (staticConfigObject) {
@@ -53,7 +58,7 @@ module.exports.start = async (params) => {
 
   const argList = ["--configFile", pathToStaticConfigFile]
 
-  if (params.log) console.log(`Running ${traefikPath} ${argList.join(" ")}`)
+  log.trace(`Running ${traefikPath} ${argList.join(" ")}`)
   const proc = child_process.spawn(traefikPath, argList, {
     shell: true,
   })
@@ -65,13 +70,13 @@ module.exports.start = async (params) => {
     traefikService.emit("data", data)
     recentStderrLines.push(data)
     recentStderrLines = recentStderrLines.slice(-10)
-    if (params.log) console.log(`traefik stderr: ${data}`)
+    log.trace({ stderr: data.toString() })
   })
 
   let isClosed = false
   proc.on("close", (code) => {
     traefikService.emit("close", code)
-    if (params.log) console.log(`traefik closing (code: ${code})`)
+    log.trace(`traefik closing (code: ${code})`)
     isClosed = true
   })
 
